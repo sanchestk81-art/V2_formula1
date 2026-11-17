@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Corridas Antigas • Banco de Pódios (2020 a 2026) • Setor F1{% endblock %}
+
+{% block content %}
+<!-- DATATABLES CSS CDN & EXTENSÕES -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+
+<!-- CABEÇALHO DA SEÇÃO DE CORRIDAS ANTIGAS -->
+<div class="section-header" style="margin-bottom: 25px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span class="f1-badge" style="font-size: 0.85rem; padding: 2px 8px;">ARQUIVO HISTÓRICO</span>
+            <span style="color: var(--f1-gold); font-weight: 700; font-size: 0.95rem;">🏆 TEMPORADAS 2020 — 2026</span>
+        </div>
+        <h1 class="section-title">Corridas Antigas & Banco Oficial de Pódios</h1>
+        <p style="color: var(--f1-text-muted); font-size: 0.98rem; max-width: 900px; margin-top: 6px;">
+            Explore a base de dados completa de todos os pódios (1º, 2º e 3º lugares) de cada Grande Prêmio da Fórmula 1 disputado entre 2020 e 2026. 
+            Utilize a tabela interativa estilo <a href="https://datatables.net/" target="_blank" style="color: var(--f1-red); font-weight: 700; text-decoration: underline;">DataTables</a> com pesquisa em tempo real, ordenação por qualquer coluna, filtros rápidos por temporada e acesso direto ao perfil oficial de cada piloto.
+        </p>
+    </div>
+</div>
+
+<!-- CARDS DE ESTATÍSTICAS HISTÓRICAS (2020 A 2026) -->
+<div class="admin-stats-grid" style="margin-bottom: 30px;">
+    <div class="admin-stat-card">
+        <span class="stat-number">{{ total_podios }}</span>
+        <span class="stat-title">Pódios Registrados</span>
+    </div>
+    <div class="admin-stat-card">
+        <span class="stat-number" style="color: var(--f1-gold);">{{ total_gps }}</span>
+        <span class="stat-title">Grandes Prêmios</span>
+    </div>
+    <div class="admin-stat-card">
+        <span class="stat-number" style="color: var(--f1-green);">{{ total_temporadas }}</span>
+        <span class="stat-title">Temporadas (2020-2026)</span>
+    </div>
+    {% if maior_vencedor %}
+    <div class="admin-stat-card">
+        <span class="stat-number" style="font-size: 1.5rem; color: #fff;">{{ maior_vencedor.piloto_nome }}</span>
+        <span class="stat-title">🥇 Mais Vitórias ({{ maior_vencedor.vitorias }} vitórias)</span>
+    </div>
+    {% endif %}
+    {% if lider_podios %}
+    <div class="admin-stat-card">
+        <span class="stat-number" style="font-size: 1.5rem; color: #fff;">{{ lider_podios.piloto_nome }}</span>
+        <span class="stat-title">🏆 Mais Pódios ({{ lider_podios.total_podios }} vezes)</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- BARRA DE FILTROS RÁPIDOS POR ANO E POSIÇÃO -->
+<div class="datatable-controls-bar">
+    <div class="datatable-filter-group">
+        <span class="filter-group-title">📅 Filtrar Temporada:</span>
+        <div class="quick-filter-chips" id="yearFilterChips">
+            <button type="button" class="f1-chip active" data-filter="">Todas</button>
+            {% for a in anos_disponiveis %}
+            <button type="button" class="f1-chip" data-filter="{{ a }}">{{ a }}</button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="datatable-filter-group" style="margin-top: 12px;">
+        <span class="filter-group-title">🏅 Filtrar Degrau do Pódio:</span>
+        <div class="quick-filter-chips" id="posFilterChips">
+            <button type="button" class="f1-chip active" data-pos="">Todos (1º, 2º e 3º)</button>
+            <button type="button" class="f1-chip" data-pos="1º">🥇 1º Vencedor</button>
+            <button type="button" class="f1-chip" data-pos="2º">🥈 2º Lugar</button>
+            <button type="button" class="f1-chip" data-pos="3º">🥉 3º Lugar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TABELA DATATABLES OFICIAL -->
+<div class="datatable-wrapper-card">
+    <div class="datatable-header-info">
+        <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;">
+                🏁 Tabela Oficial de Pódios — Fórmula 1
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--f1-text-muted); margin-top: 2px;">
+                Clique nos cabeçalhos das colunas para ordenar de forma crescente ou decrescente.
+            </p>
+        </div>
+        <div class="table-legend">
+            <span class="legend-badge p1">1º Ouro</span>
+            <span class="legend-badge p2">2º Prata</span>
+            <span class="legend-badge p3">3º Bronze</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table id="tabelaPodios" class="display responsive nowrap f1-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th style="width: 90px;">Posição</th>
+                    <th>Piloto</th>
+                    <th>Equipe</th>
+                    <th style="width: 70px;">Ano</th>
+                    <th>Grande Prêmio & Circuito</th>
+                    <th style="width: 80px;">Pontos</th>
+                    <th style="width: 85px;">Pole</th>
+                    <th style="width: 120px;" class="no-sort">Perfil</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in podios %}
+                <tr>
+                    <!-- POSIÇÃO -->
+                    <td data-order="{{ p.posicao }}">
+                        {% if p.posicao == 1 %}
+                            <span class="podium-badge gold">🥇 1º</span>
+                        {% elif p.posicao == 2 %}
+                            <span class="podium-badge silver">🥈 2º</span>
+                        {% elif p.posicao == 3 %}
+                            <span class="podium-badge bronze">🥉 3º</span>
+                        {% else %}
+                            <span class="podium-badge">{{ p.posicao }}º</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- PILOTO -->
+                    <td>
+                        <div class="driver-cell">
+                            {% if p.piloto_foto %}
+                                <img src="{{ p.piloto_foto }}" alt="{{ p.piloto_nome }}" class="driver-table-avatar" onerror="this.style.display='none';">
+                            {% else %}
+                                <div class="driver-table-avatar-placeholder">🏎️</div>
+                            {% endif %}
+                            <div class="driver-info-block">
+                                <span class="driver-table-name">
+                                    {{ p.piloto_pais_codigo|bandeira }} {{ p.piloto_nome }}
+                                </span>
+                                {% if p.numero %}
+                                    <span class="driver-car-number">#{{ p.numero }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- EQUIPE -->
+                    <td>
+                        <span class="team-badge" style="border-left-color: {{ p.equipe_cor }};">
+                            <span class="team-color-dot" style="background-color: {{ p.equipe_cor }};"></span>
+                            {{ p.equipe }}
+                        </span>
+                    </td>
+
+                    <!-- ANO / TEMPORADA -->
+                    <td data-order="{{ p.ano }}">
+                        <span class="year-pill">{{ p.ano }}</span>
+                    </td>
+
+                    <!-- GRANDE PRÊMIO & CIRCUITO -->
+                    <td>
+                        <div class="gp-cell">
+                            <span class="gp-flag">{{ p.pais_codigo|bandeira }}</span>
+                            <div>
+                                <span class="gp-name">{{ p.nome_gp }}</span>
+                                <span class="gp-circuit">🏁 {{ p.circuito }} &bull; Etapa {{ p.rodada }}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- PONTOS -->
+                    <td data-order="{{ p.pontos }}">
+                        <span class="points-badge">+{{ p.pontos }} pts</span>
+                    </td>
+
+                    <!-- POLE POSITION -->
+                    <td>
+                        {% if p.pole_position|lower in ['sim', 'true', '1'] %}
+                            <span class="pole-badge sim" title="Largou na Pole Position">⚡ Sim</span>
+                        {% else %}
+                            <span class="pole-badge nao">Não</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- BOTÃO PERFIL DO PILOTO -->
+                    <td class="text-center">
+                        {% if p.piloto_id %}
+                            <a href="{{ url_for('piloto_detalhe', id=p.piloto_id) }}" class="btn-driver-profile" title="Ver perfil e biografia de {{ p.piloto_nome }}">
+                                👤 Ver Perfil
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('pilotos') }}" class="btn-driver-profile" title="Ver catálogo de pilotos">
+                                👤 Pilotos
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JQUERY E DATATABLES JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Inicialização da Tabela DataTables com estilização Dark e Tradução PT-BR
+    const table = $('#tabelaPodios').DataTable({
+        responsive: true,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos os Pódios"]],
+        order: [[3, 'desc'], [0, 'asc']], // Ordena por Ano descrescente e depois Posição
+        columnDefs: [
+            { targets: 'no-sort', orderable: false }
+        ],
+        language: {
+            search: "🔍 Pesquisa Rápida:",
+            searchPlaceholder: "Buscar piloto, GP, equipe ou ano...",
+            lengthMenu: "Exibir _MENU_ pódios por página",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ pódios registrados",
+            infoEmpty: "Nenhum resultado encontrado",
+            infoFiltered: "(filtrado do total de _MAX_ pódios)",
+            zeroRecords: "Nenhum pódio localizado com os filtros aplicados.",
+            paginate: {
+                first: "«",
+                previous: "‹ Anterior",
+                next: "Próximo ›",
+                last: "»"
+            }
+        }
+    });
+
+    // Filtro rápido por chips de temporada
+    $('#yearFilterChips .f1-chip').on('click', function() {
+        $('#yearFilterChips .f1-chip').removeClass('active');
+        $(this).addClass('active');
+
+        const year = $(this).data('filter');
+        // Coluna 3 é o Ano
+        if (year) {
+            table.column(3).search('^' + year + '$', true, false).draw();
+        } else {
+            table.column(3).search('').draw();
+        }
+    });
+
+    // Filtro rápido por chips de posição
+    $('#posFilterChips .f1-chip').on('click', function() {
+        $('#posFilterChips .f1-chip').removeClass('active');
+        $(this).addClass('active');
+
+        const pos = $(this).data('pos');
+        // Coluna 0 é a Posição
+        if (pos) {
+            table.column(0).search(pos).draw();
+        } else {
+            table.column(0).search('').draw();
+        }
+    });
+});
+</script>
+{% endblock %}
