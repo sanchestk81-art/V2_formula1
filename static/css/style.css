@@ -1883,3 +1883,300 @@ table.dataTable.f1-table tbody td {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================================================
+   CARROSSEL DA LOJA OFICIAL (FAN STORE)
+   ========================================================================== */
+.store-carousel-container {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--f1-card-border);
+    min-height: 380px;
+    background-color: #12121b;
+}
+
+.store-carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+}
+
+.store-carousel-slide {
+    display: none;
+    padding: 50px 45px;
+    min-height: 380px;
+    background-size: cover;
+    background-position: center;
+    flex-direction: column;
+    justify-content: center;
+    transition: opacity 0.6s ease-in-out;
+}
+
+.store-carousel-slide.active {
+    display: flex;
+    animation: fadeSlide 0.5s ease-in-out;
+}
+
+.store-slide-content {
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 2;
+}
+
+.store-hero-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+}
+
+.store-hero-subtitle {
+    font-size: 1.05rem;
+    color: #f0f0f0;
+    margin-bottom: 15px;
+    line-height: 1.55;
+    text-shadow: 0 1px 5px rgba(0,0,0,0.8);
+}
+
+/* ==========================================================================
+   CORES DAS TAGS DAS ETAPAS POR ANO (2020 - 2026)
+   ========================================================================== */
+.race-stage-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+/* 2020: Vermelho */
+.tag-ano-2020,
+.race-stage-tag.tag-ano-2020,
+.year-pill.tag-ano-2020 {
+    background-color: #e10600 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 2021: Azul */
+.tag-ano-2021,
+.race-stage-tag.tag-ano-2021,
+.year-pill.tag-ano-2021 {
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+
+/* 2022: Verde */
+.tag-ano-2022,
+.race-stage-tag.tag-ano-2022,
+.year-pill.tag-ano-2022 {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(74, 222, 128, 0.4) !important;
+}
+
+/* 2023: Rosa */
+.tag-ano-2023,
+.race-stage-tag.tag-ano-2023,
+.year-pill.tag-ano-2023 {
+    background-color: #db2777 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(244, 114, 182, 0.4) !important;
+}
+
+/* 2024: Roxo */
+.tag-ano-2024,
+.race-stage-tag.tag-ano-2024,
+.year-pill.tag-ano-2024 {
+    background-color: #7c3aed !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(167, 139, 250, 0.4) !important;
+}
+
+/* 2025: Branco */
+.tag-ano-2025,
+.race-stage-tag.tag-ano-2025,
+.year-pill.tag-ano-2025 {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+    font-weight: 900 !important;
+}
+
+/* 2026: Laranja */
+.tag-ano-2026,
+.race-stage-tag.tag-ano-2026,
+.year-pill.tag-ano-2026 {
+    background-color: #ea580c !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(251, 146, 60, 0.4) !important;
+}
+
+/* ==========================================================================
+   ADMIN: ACORDEÃO POR ANO & PESQUISA DE CORRIDAS
+   ========================================================================== */
+.admin-year-accordion {
+    border: 1px solid var(--f1-card-border);
+    border-radius: var(--radius);
+    background-color: var(--f1-card-bg);
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.admin-year-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background-color: #151522;
+    user-select: none;
+    transition: var(--transition);
+}
+
+.admin-year-header:hover {
+    background-color: #1b1b2c;
+}
+
+.admin-year-header .year-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-year-arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    font-size: 1.1rem;
+    color: var(--f1-gold);
+}
+
+.admin-year-accordion.open .admin-year-arrow {
+    transform: rotate(90deg);
+}
+
+.admin-year-content {
+    display: none;
+    padding: 16px 20px;
+    background-color: #101018;
+    border-top: 1px solid var(--f1-card-border);
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-year-accordion.open .admin-year-content {
+    display: flex;
+}
+
+/* ==========================================================================
+   FEEDBACK TOAST & DELEÇÃO SUAVE (AJAX)
+   ========================================================================== */
+.f1-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e1e2d;
+    color: #ffffff;
+    border-left: 5px solid #27ae60;
+    padding: 14px 22px;
+    border-radius: 6px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    font-size: 0.92rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.f1-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.f1-toast.toast-error {
+    border-left-color: var(--f1-red);
+}
+
+.item-deleting {
+    transition: all 0.4s ease-out !important;
+    opacity: 0 !important;
+    transform: scale(0.92) translateX(-20px) !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+}
+
+/* ==========================================================================
+   INTEGRAÇÃO BULMA & EXPORTAÇÃO PDF
+   ========================================================================== */
+.f1-bulma-table {
+    background-color: #161622 !important;
+    color: #eee !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.f1-bulma-table th {
+    background-color: #0e0e16 !important;
+    color: var(--f1-gold) !important;
+    border-color: var(--f1-card-border) !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 12px 16px !important;
+}
+
+.f1-bulma-table td {
+    border-color: var(--f1-card-border) !important;
+    vertical-align: middle !important;
+    padding: 12px 16px !important;
+}
+
+.f1-bulma-table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+    background-color: #13131e !important;
+}
+
+.f1-bulma-table.is-hoverable tbody tr:not(.is-selected):hover {
+    background-color: #1d1d2c !important;
+}
+
+.btn-export-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-export-pdf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4);
+}

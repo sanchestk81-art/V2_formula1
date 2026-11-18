@@ -205,12 +205,12 @@
 
 <script>
     let slideLojaAtual = 0;
-    const slidesLoja = document.querySelectorAll('.store-carousel-slide');
-    const dotsLoja = document.querySelectorAll('.store-dot');
-    let intervaloLoja;
+    let slidesLoja = [];
+    let dotsLoja = [];
+    let intervaloLoja = null;
 
     function mostrarSlideLoja(idx) {
-        if (!slidesLoja.length) return;
+        if (!slidesLoja || slidesLoja.length === 0) return;
         if (idx >= slidesLoja.length) slideLojaAtual = 0;
         else if (idx < 0) slideLojaAtual = slidesLoja.length - 1;
         else slideLojaAtual = idx;
@@ -230,23 +230,26 @@
     }
 
     function iniciarCarrosselLoja() {
-        intervaloLoja = setInterval(() => {
-            mostrarSlideLoja(slideLojaAtual + 1);
-        }, 5500);
+        if (intervaloLoja) clearInterval(intervaloLoja);
+        if (slidesLoja && slidesLoja.length > 1) {
+            intervaloLoja = setInterval(() => {
+                mostrarSlideLoja(slideLojaAtual + 1);
+            }, 4200); // Rotação contínua e suave a cada 4.2 segundos
+        }
     }
 
     function reiniciarIntervaloLoja() {
-        clearInterval(intervaloLoja);
+        if (intervaloLoja) clearInterval(intervaloLoja);
         iniciarCarrosselLoja();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        iniciarCarrosselLoja();
+        slidesLoja = document.querySelectorAll('.store-carousel-slide');
+        dotsLoja = document.querySelectorAll('.store-dot');
 
-        const carousel = document.getElementById('storeCarousel');
-        if (carousel) {
-            carousel.addEventListener('mouseenter', () => clearInterval(intervaloLoja));
-            carousel.addEventListener('mouseleave', () => iniciarCarrosselLoja());
+        if (slidesLoja && slidesLoja.length > 0) {
+            mostrarSlideLoja(0);
+            iniciarCarrosselLoja();
         }
 
         const botoesDeslogados = document.querySelectorAll('.btn-comprar-deslogado');
@@ -256,14 +259,15 @@
         botoesDeslogados.forEach(btn => {
             btn.addEventListener('click', () => {
                 const nome = btn.getAttribute('data-produto');
-                produtoNomeSpan.textContent = `"${nome}"`;
-                modal.style.display = 'flex';
+                if (produtoNomeSpan) produtoNomeSpan.textContent = `"${nome}"`;
+                if (modal) modal.style.display = 'flex';
             });
         });
     });
 
     function fecharModal() {
-        document.getElementById('modalCadastroNecessario').style.display = 'none';
+        const modal = document.getElementById('modalCadastroNecessario');
+        if (modal) modal.style.display = 'none';
     }
 </script>
 {% endblock %}

@@ -129,12 +129,15 @@
         </form>
     </div>
 
-    <div class="section-header">
+    <div class="section-header" style="flex-wrap: wrap; gap: 15px;">
         <h3 class="section-title" style="font-size: 1.25rem;">Notícias Cadastradas ({{ noticias|length }})</h3>
+        <div style="flex: 1; max-width: 400px; min-width: 240px;">
+            <input type="text" id="filtroNoticiasAdmin" class="form-control" placeholder="🔍 Pesquisar notícia por título ou categoria..." oninput="filtrarNoticiasAdmin(this.value)">
+        </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div id="listaNoticiasAdmin" style="display: flex; flex-direction: column; gap: 12px;">
         {% for n in noticias %}
-        <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="card admin-noticia-item" data-busca="{{ n.titulo }} {{ n.categoria }}" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="flex: 2; min-width: 260px;">
                 <span class="card-tag">{{ n.categoria }} &bull; {{ n.data_publicacao.strftime('%d/%m/%Y') }}</span>
                 <h4 style="color: #fff; font-size: 1.05rem;">{{ n.titulo }}</h4>
@@ -334,31 +337,114 @@
         </form>
     </div>
 
-    <!-- LISTA DE CORRIDAS COM BOTÕES EDITAR, EXCLUIR E ACESSAR DETALHES -->
-    <div class="section-header">
-        <h3 class="section-title" style="font-size: 1.25rem;">Corridas no Acervo ({{ corridas|length }})</h3>
+    <!-- LISTA DE CORRIDAS COM ACORDEÃO POR ANO & PESQUISA EM TEMPO REAL -->
+    <div class="section-header" style="flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+        <div>
+            <h3 class="section-title" style="font-size: 1.25rem;">Corridas & Pódios no Acervo ({{ corridas|length }})</h3>
+            <p style="color: var(--f1-text-muted); font-size: 0.85rem; margin-top: 4px;">
+                Organizado por temporadas. Clique na setinha de cada ano para expandir ou recolher as etapas.
+            </p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="alternarTodosAcordeoes()" style="padding: 8px 14px; font-size: 0.8rem;">
+                ↕️ Expandir / Recolher Todos
+            </button>
+        </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-        {% for c in corridas %}
-        <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div style="flex: 2; min-width: 250px;">
-                <span class="card-tag">{{ c.ano }} &bull; Etapa {{ c.rodada }} &bull; {{ c.status|upper }}</span>
-                <h4 style="color: #fff; font-size: 1.05rem;">{{ c.pais_codigo|bandeira }} {{ c.nome_gp }} ({{ c.circuito }})</h4>
+
+    <!-- BARRA DE PESQUISA E FILTROS RÁPIDOS POR ANO -->
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--f1-card-border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 260px;">
+                <input type="text" id="filtroCorridasAdmin" class="form-control" placeholder="🔍 Pesquisar corrida por nome, circuito, país, piloto ou ano..." oninput="filtrarCorridasAdmin(this.value)">
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <a href="{{ url_for('corrida_detalhe', id=c.id) }}" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;">
-                    🔍 Detalhes
-                </a>
-                <a href="{{ url_for('admin_editar_corrida', id=c.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; background: #2980b9;">
-                    ✏️ Editar
-                </a>
-                <form action="{{ url_for('admin_excluir_corrida', id=c.id) }}" method="POST" onsubmit="return confirm('Deseja excluir esta corrida?');">
-                    <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.75rem; background: #c0392b; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-                        🗑️ Excluir
-                    </button>
-                </form>
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; color: var(--f1-text-muted); font-weight: 700; text-transform: uppercase;">Ano:</span>
+                <button type="button" class="btn btn-secondary btn-filtro-ano-admin active" onclick="filtrarAnoAdmin('todos', this)" style="padding: 5px 11px; font-size: 0.75rem;">
+                    Todos
+                </button>
+                {% for a in anos_corridas %}
+                <button type="button" class="btn btn-secondary btn-filtro-ano-admin tag-ano-{{ a }}" onclick="filtrarAnoAdmin('{{ a }}', this)" style="padding: 5px 11px; font-size: 0.75rem; font-weight: 800;">
+                    {{ a }}
+                </button>
+                {% endfor %}
             </div>
         </div>
+    </div>
+
+    <!-- LISTINHA DE ANOS COM SETINHA (ACORDEÃO POR TEMPORADA) -->
+    <div id="containerAcordeaoCorridas">
+        {% for ano_atual in anos_corridas %}
+        {% set corridas_do_ano = corridas|selectattr("ano", "equalto", ano_atual)|list %}
+        {% if corridas_do_ano %}
+        <div class="admin-year-accordion {% if loop.first %}open{% endif %}" data-ano="{{ ano_atual }}">
+            <!-- CABEÇALHO DO ANO COM SETINHA CLICÁVEL -->
+            <div class="admin-year-header" onclick="toggleAcordeaoAno(this)">
+                <div class="year-title-group">
+                    <span class="admin-year-arrow">▶</span>
+                    <span class="race-stage-tag tag-ano-{{ ano_atual }}" style="font-size: 0.85rem; padding: 4px 10px;">
+                        {{ ano_atual }}
+                    </span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: #fff;">
+                        Temporada {{ ano_atual }}
+                    </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="year-count-badge" style="font-size: 0.8rem; color: var(--f1-text-muted); background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+                        {{ corridas_do_ano|length }} corridas
+                    </span>
+                </div>
+            </div>
+
+            <!-- LISTA DE ETAPAS DESTE ANO -->
+            <div class="admin-year-content">
+                {% for c in corridas_do_ano %}
+                <div class="card admin-race-row admin-item-row" data-busca="{{ c.nome_gp }} {{ c.circuito }} {{ c.pais }} {{ c.ano }} {{ c.vencedor_equipe or '' }} {{ c.segundo_lugar or '' }} {{ c.terceiro_lugar or '' }}" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; background: #14141e; border: 1px solid var(--f1-card-border); border-radius: 6px;">
+                    <div style="flex: 2; min-width: 250px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                            <span class="race-stage-tag tag-ano-{{ c.ano }}" style="font-size: 0.72rem; padding: 2px 8px;">
+                                {{ c.ano }} - Etapa {{ c.rodada }}
+                            </span>
+                            <span class="race-badge-status {% if c.status == 'concluida' %}badge-finished{% else %}badge-upcoming{% endif %}" style="font-size: 0.68rem; padding: 2px 7px;">
+                                {{ c.status|upper }}
+                            </span>
+                            <span style="font-size: 0.82rem; color: var(--f1-text-muted);">
+                                📅 {{ c.data_corrida.strftime('%d/%m/%Y') if c.data_corrida else '' }}
+                            </span>
+                        </div>
+                        <h4 style="color: #fff; font-size: 1.05rem; margin: 0 0 4px 0;">
+                            {{ c.pais_codigo|bandeira }} {{ c.nome_gp }}
+                        </h4>
+                        <p style="color: var(--f1-red); font-size: 0.82rem; margin: 0; font-weight: 600;">
+                            🏁 {{ c.circuito }} &bull; {{ c.cidade }}, {{ c.pais }}
+                        </p>
+                        {% if c.status == 'concluida' and (c.vencedor_equipe or c.segundo_lugar) %}
+                        <div style="font-size: 0.78rem; color: #aaa; margin-top: 6px;">
+                            <strong style="color: var(--f1-gold);">1º</strong> {{ c.vencedor_equipe or 'Vencedor' }} &bull; 
+                            <strong style="color: var(--f1-silver);">2º</strong> {{ c.segundo_lugar }} &bull; 
+                            <strong style="color: var(--f1-bronze);">3º</strong> {{ c.terceiro_lugar }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <a href="{{ url_for('corrida_detalhe', id=c.id) }}" target="_blank" class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.78rem;">
+                            🔍 Detalhes / Pódio
+                        </a>
+                        <a href="{{ url_for('admin_editar_corrida', id=c.id) }}" class="btn btn-secondary" style="padding: 7px 14px; font-size: 0.78rem; background: #2980b9;">
+                            ✏️ Editar
+                        </a>
+                        <form action="{{ url_for('admin_excluir_corrida', id=c.id) }}" method="POST" data-confirm="Deseja realmente excluir a corrida {{ c.nome_gp }} ({{ c.ano }})?">
+                            <button type="submit" class="btn btn-danger" style="padding: 7px 14px; font-size: 0.78rem; background: #c0392b; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+                                🗑️ Excluir
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         {% endfor %}
     </div>
 </div>
@@ -385,21 +471,16 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                 <div class="form-group">
                     <label class="form-label">Nacionalidade *</label>
                     <input type="text" name="nacionalidade" class="form-control" placeholder="Ex: Brasil" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Código do País (Bandeira) *</label>
-                    <input type="text" name="pais_codigo" class="form-control" placeholder="Ex: br, nl, mc, gb" value="br" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Equipe</label>
-                    <select name="equipe_id" class="form-control">
-                        <option value="">Sem Equipe / Agente Livre</option>
+                    <label class="form-label">Equipe * (Obrigatória)</label>
+                    <select name="equipe_id" class="form-control" required>
+                        <option value="" disabled selected>Selecione a equipe obrigatória...</option>
                         {% for eq in equipes %}
                         <option value="{{ eq.id }}">{{ eq.nome }}</option>
                         {% endfor %}
@@ -413,32 +494,10 @@
                         <option value="reserva">🛡️ Piloto Reserva / Testes</option>
                     </select>
                 </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;">
-                <div class="form-group">
-                    <label class="form-label">Pontos na Temporada</label>
-                    <input type="number" name="pontos_temporada" class="form-control" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Chance de Título (%)</label>
-                    <input type="number" step="0.1" name="chance_titulo" class="form-control" value="0.0">
-                </div>
 
                 <div class="form-group">
                     <label class="form-label">Títulos Mundiais</label>
                     <input type="number" name="titulos_mundiais" class="form-control" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Vitórias</label>
-                    <input type="number" name="vitorias" class="form-control" value="0">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Pódios</label>
-                    <input type="number" name="podios" class="form-control" value="0">
                 </div>
             </div>
 
@@ -478,12 +537,15 @@
     </div>
 
     <!-- LISTA DE PILOTOS COM EDITAR E EXCLUIR -->
-    <div class="section-header">
+    <div class="section-header" style="flex-wrap: wrap; gap: 15px;">
         <h3 class="section-title" style="font-size: 1.25rem;">Pilotos Cadastrados no Setor F1 ({{ pilotos|length }})</h3>
+        <div style="flex: 1; max-width: 400px; min-width: 240px;">
+            <input type="text" id="filtroPilotosAdmin" class="form-control" placeholder="🔍 Pesquisar piloto por nome, equipe ou país..." oninput="filtrarPilotosAdmin(this.value)">
+        </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div id="listaPilotosAdmin" style="display: flex; flex-direction: column; gap: 12px;">
         {% for p in pilotos %}
-        <div class="card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="card admin-piloto-item" data-busca="{{ p.nome }} {{ p.equipe_nome or '' }} {{ p.nacionalidade or '' }} {{ p.papel_equipe }}" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 14px;">
                 <img src="{{ p.foto_url }}" alt="{{ p.nome }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--f1-red);">
                 <div>
@@ -730,12 +792,15 @@
     </div>
 
     <!-- LISTA DE PRODUTOS COM EDITAR E EXCLUIR -->
-    <div class="section-header">
+    <div class="section-header" style="flex-wrap: wrap; gap: 15px;">
         <h3 class="section-title" style="font-size: 1.25rem;">Produtos Cadastrados na Loja ({{ produtos|length }})</h3>
+        <div style="flex: 1; max-width: 400px; min-width: 240px;">
+            <input type="text" id="filtroProdutosAdmin" class="form-control" placeholder="🔍 Pesquisar produto por nome, tag ou categoria..." oninput="filtrarProdutosAdmin(this.value)">
+        </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div id="listaProdutosAdmin" style="display: flex; flex-direction: column; gap: 12px;">
         {% for prod in produtos %}
-        <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="card admin-produto-item" data-busca="{{ prod.nome }} {{ prod.categoria }} {{ prod.tag }}" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <img src="{{ prod.imagem_url }}" alt="{{ prod.nome }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--f1-card-border);">
                 <div>
@@ -942,6 +1007,92 @@
         if (secao) {
             secao.style.display = (status === 'concluida') ? 'block' : 'none';
         }
+    }
+
+    // =========================================================================
+    // GESTÃO DO ACORDEÃO POR ANO & PESQUISA DE CORRIDAS (ADMIN)
+    // =========================================================================
+    function toggleAcordeaoAno(header) {
+        const accordion = header.closest('.admin-year-accordion');
+        if (accordion) {
+            accordion.classList.toggle('open');
+        }
+    }
+
+    let todosAbertos = true;
+    function alternarTodosAcordeoes() {
+        todosAbertos = !todosAbertos;
+        document.querySelectorAll('.admin-year-accordion').forEach(acc => {
+            acc.classList.toggle('open', todosAbertos);
+        });
+    }
+
+    function filtrarCorridasAdmin(termo) {
+        const termoLimpo = (termo || '').toLowerCase().trim();
+        const acordeoes = document.querySelectorAll('.admin-year-accordion');
+
+        acordeoes.forEach(acc => {
+            const linhas = acc.querySelectorAll('.admin-race-row');
+            let correspondenciasNoAno = 0;
+
+            linhas.forEach(linha => {
+                const textoBusca = (linha.getAttribute('data-busca') || linha.textContent).toLowerCase();
+                const corresponde = !termoLimpo || textoBusca.includes(termoLimpo);
+                linha.style.display = corresponde ? 'flex' : 'none';
+                if (corresponde) correspondenciasNoAno++;
+            });
+
+            // Se houver termo digitado, exibe apenas anos com itens e abre-os automaticamente
+            if (termoLimpo) {
+                acc.style.display = correspondenciasNoAno > 0 ? 'block' : 'none';
+                if (correspondenciasNoAno > 0) acc.classList.add('open');
+            } else {
+                acc.style.display = 'block';
+            }
+        });
+    }
+
+    function filtrarAnoAdmin(ano, btn) {
+        document.querySelectorAll('.btn-filtro-ano-admin').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const acordeoes = document.querySelectorAll('.admin-year-accordion');
+        acordeoes.forEach(acc => {
+            const anoCard = acc.getAttribute('data-ano');
+            if (ano === 'todos' || anoCard === String(ano)) {
+                acc.style.display = 'block';
+                acc.classList.add('open');
+            } else {
+                acc.style.display = 'none';
+            }
+        });
+    }
+
+    // =========================================================================
+    // FILTROS EM TEMPO REAL PARA DEMAIS TABELAS
+    // =========================================================================
+    function filtrarNoticiasAdmin(termo) {
+        const t = (termo || '').toLowerCase().trim();
+        document.querySelectorAll('.admin-noticia-item').forEach(el => {
+            const busca = (el.getAttribute('data-busca') || el.textContent).toLowerCase();
+            el.style.display = (!t || busca.includes(t)) ? 'flex' : 'none';
+        });
+    }
+
+    function filtrarPilotosAdmin(termo) {
+        const t = (termo || '').toLowerCase().trim();
+        document.querySelectorAll('.admin-piloto-item').forEach(el => {
+            const busca = (el.getAttribute('data-busca') || el.textContent).toLowerCase();
+            el.style.display = (!t || busca.includes(t)) ? 'flex' : 'none';
+        });
+    }
+
+    function filtrarProdutosAdmin(termo) {
+        const t = (termo || '').toLowerCase().trim();
+        document.querySelectorAll('.admin-produto-item').forEach(el => {
+            const busca = (el.getAttribute('data-busca') || el.textContent).toLowerCase();
+            el.style.display = (!t || busca.includes(t)) ? 'flex' : 'none';
+        });
     }
 
     // Suporte para abrir aba via hash na URL (ex: #aba-pilotos)

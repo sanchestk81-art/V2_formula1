@@ -84,10 +84,15 @@
                 Clique nos cabeçalhos das colunas para ordenar de forma crescente ou decrescente.
             </p>
         </div>
-        <div class="table-legend">
-            <span class="legend-badge p1">1º Ouro</span>
-            <span class="legend-badge p2">2º Prata</span>
-            <span class="legend-badge p3">3º Bronze</span>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="button is-danger is-rounded btn-export-pdf" onclick="baixarTabelaPodiosPDF()">
+                <span>📄 Baixar Tabela em PDF</span>
+            </button>
+            <div class="table-legend">
+                <span class="legend-badge p1">1º Ouro</span>
+                <span class="legend-badge p2">2º Prata</span>
+                <span class="legend-badge p3">3º Bronze</span>
+            </div>
         </div>
     </div>
 
@@ -150,7 +155,7 @@
 
                     <!-- ANO / TEMPORADA -->
                     <td data-order="{{ p.ano }}">
-                        <span class="year-pill">{{ p.ano }}</span>
+                        <span class="year-pill tag-ano-{{ p.ano }}" style="font-weight: 800;">{{ p.ano }}</span>
                     </td>
 
                     <!-- GRANDE PRÊMIO & CIRCUITO -->
@@ -159,7 +164,7 @@
                             <span class="gp-flag">{{ p.pais_codigo|bandeira }}</span>
                             <div>
                                 <span class="gp-name">{{ p.nome_gp }}</span>
-                                <span class="gp-circuit">🏁 {{ p.circuito }} &bull; Etapa {{ p.rodada }}</span>
+                                <span class="gp-circuit">🏁 {{ p.circuito }} &bull; <span class="race-stage-tag tag-ano-{{ p.ano }}" style="font-size: 0.72rem; padding: 2px 7px;">{{ p.ano }} - Etapa {{ p.rodada }}</span></span>
                             </div>
                         </div>
                     </td>
@@ -258,5 +263,42 @@ $(document).ready(function() {
         }
     });
 });
+
+function baixarTabelaPodiosPDF() {
+    const el = document.getElementById('tabelaPodios');
+    if (!el) return;
+
+    // Cria um container limpo e estilizado especificamente para o PDF
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '25px';
+    wrapper.style.backgroundColor = '#12121b';
+    wrapper.style.color = '#ffffff';
+    wrapper.style.fontFamily = 'Arial, sans-serif';
+
+    const header = document.createElement('div');
+    header.innerHTML = `
+        <div style="border-bottom: 2px solid #e10600; padding-bottom: 12px; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; font-size: 22px; margin: 0;">SETOR F1 • BANCO HISTÓRICO DE PÓDIOS</h1>
+            <p style="color: #aaa; font-size: 13px; margin: 5px 0 0 0;">Relatório Oficial de Resultados e Pódios da Fórmula 1 (2020 a 2026)</p>
+        </div>
+    `;
+    wrapper.appendChild(header);
+
+    const tabelaClone = el.cloneNode(true);
+    // Remove botões de ação ou colunas interativas se necessário
+    tabelaClone.style.width = '100%';
+    tabelaClone.style.fontSize = '11px';
+    wrapper.appendChild(tabelaClone);
+
+    const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     'SetorF1_Podios_Historicos.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#12121b' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(wrapper).save();
+}
 </script>
 {% endblock %}

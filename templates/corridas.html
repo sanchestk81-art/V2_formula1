@@ -34,8 +34,8 @@
 {% if corrida_destaque %}
 <section class="race-highlight-box" style="margin-top: 25px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <span class="race-badge-status badge-finished">
-             Resultado Oficial • Temporada {{ corrida_destaque.ano }} (Etapa {{ corrida_destaque.rodada }})
+        <span class="race-stage-tag tag-ano-{{ corrida_destaque.ano }}" style="font-size: 0.82rem; padding: 6px 12px;">
+             🏁 {{ corrida_destaque.ano }} - Etapa {{ corrida_destaque.rodada }} • Resultado Oficial
         </span>
         <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 1.5rem;">{{ corrida_destaque.pais_codigo|bandeira }}</span>
@@ -113,8 +113,8 @@
         {% for c in corridas_concluidas %}
         <article class="card" style="padding: 24px; border-left: 4px solid var(--f1-gold);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span class="race-badge-status badge-finished" style="font-size: 0.7rem;">
-                    {{ c.ano }} • Etapa {{ c.rodada }}
+                <span class="race-stage-tag tag-ano-{{ c.ano }}" style="font-size: 0.72rem;">
+                    {{ c.ano }} - Etapa {{ c.rodada }}
                 </span>
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="font-size: 1.3rem;">{{ c.pais_codigo|bandeira }}</span>
@@ -162,7 +162,9 @@
         <article class="upcoming-race-card">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span class="race-badge-status badge-upcoming">Etapa {{ corrida.rodada }}</span>
+                    <span class="race-stage-tag tag-ano-{{ corrida.ano }}" style="font-size: 0.72rem;">
+                        {{ corrida.ano }} - Etapa {{ corrida.rodada }}
+                    </span>
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 1.3rem;">{{ corrida.pais_codigo|bandeira }}</span>
                         <span class="race-date-pill">

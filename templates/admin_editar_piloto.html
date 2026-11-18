@@ -34,21 +34,16 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px;">
                 <div class="form-group">
                     <label class="form-label">Nacionalidade *</label>
-                    <input type="text" name="nacionalidade" class="form-control" value="{{ piloto.nacionalidade }}" required>
+                    <input type="text" name="nacionalidade" class="form-control" value="{{ piloto.nacionalidade }}" placeholder="Ex: Brasil" required>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Código do País (Bandeira) *</label>
-                    <input type="text" name="pais_codigo" class="form-control" value="{{ piloto.pais_codigo }}" placeholder="Ex: br, nl, mc, gb" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Equipe Relacionada</label>
-                    <select name="equipe_id" class="form-control">
-                        <option value="">Sem Equipe / Agente Livre</option>
+                    <label class="form-label">Equipe * (Obrigatória)</label>
+                    <select name="equipe_id" class="form-control" required>
+                        <option value="" disabled {% if not piloto.equipe_id %}selected{% endif %}>Selecione a equipe obrigatória...</option>
                         {% for eq in equipes %}
                         <option value="{{ eq.id }}" {% if piloto.equipe_id == eq.id %}selected{% endif %}>{{ eq.nome }}</option>
                         {% endfor %}
@@ -62,32 +57,10 @@
                         <option value="reserva" {% if piloto.papel_equipe == 'reserva' %}selected{% endif %}>🛡️ Piloto Reserva / Testes</option>
                     </select>
                 </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px;">
-                <div class="form-group">
-                    <label class="form-label">Pontos na Temporada</label>
-                    <input type="number" name="pontos_temporada" class="form-control" value="{{ piloto.pontos_temporada or 0 }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Chance de Título (%)</label>
-                    <input type="number" step="0.1" name="chance_titulo" class="form-control" value="{{ piloto.chance_titulo or 0.0 }}">
-                </div>
 
                 <div class="form-group">
                     <label class="form-label">Títulos Mundiais</label>
                     <input type="number" name="titulos_mundiais" class="form-control" value="{{ piloto.titulos_mundiais or 0 }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Vitórias na Carreira</label>
-                    <input type="number" name="vitorias" class="form-control" value="{{ piloto.vitorias or 0 }}">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Pódios na Carreira</label>
-                    <input type="number" name="podios" class="form-control" value="{{ piloto.podios or 0 }}">
                 </div>
             </div>
 

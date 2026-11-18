@@ -22,8 +22,8 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
             <div>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <span class="race-badge-status {% if corrida.status == 'concluida' %}badge-finished{% else %}badge-upcoming{% endif %}">
-                        Temporada {{ corrida.ano }} • Etapa {{ corrida.rodada }}
+                    <span class="race-stage-tag tag-ano-{{ corrida.ano }}" style="font-size: 0.85rem; padding: 6px 14px;">
+                        {{ corrida.ano }} - Etapa {{ corrida.rodada }}
                     </span>
                     <span style="font-size: 1.5rem;">{{ corrida.pais_codigo|bandeira }}</span>
                     <span style="color: var(--f1-text-muted); font-size: 0.95rem; font-weight: 600;">
@@ -149,6 +149,88 @@
 
     </div>
 
+    <!-- =================================================================== -->
+    <!-- TABELA OFICIAL DO PÓDIO EM BULMA COM EXPORTAÇÃO EM PDF              -->
+    <!-- =================================================================== -->
+    <div id="blocoPodioOficial" class="box" style="background-color: var(--f1-card-bg); border: 1px solid var(--f1-card-border); border-radius: var(--radius); padding: 25px; margin-bottom: 35px;">
+        <div class="level" style="margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <div class="level-left">
+                <div>
+                    <span class="tag is-danger is-light" style="font-weight: 800; letter-spacing: 0.6px; margin-bottom: 6px;">
+                        DOCUMENTO OFICIAL DA ETAPA
+                    </span>
+                    <h3 class="title is-4" style="color: #ffffff; margin-bottom: 4px; font-weight: 900;">
+                        🏆 Tabela Oficial de Pódio e Resultados
+                    </h3>
+                    <p class="subtitle is-6" style="color: var(--f1-text-muted); margin-bottom: 0;">
+                        {{ corrida.nome_gp }} &bull; Temporada {{ corrida.ano }} &bull; Etapa {{ corrida.rodada }}
+                    </p>
+                </div>
+            </div>
+            <div class="level-right">
+                <button type="button" class="button is-danger is-rounded btn-export-pdf" onclick="baixarPodioPDF()">
+                    <span class="icon">📥</span>
+                    <span>Baixar Tabela do Pódio em PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="tabelaPodioEtapa" class="table is-fullwidth is-striped is-hoverable f1-bulma-table">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Posição / Posto</th>
+                        <th>Piloto Oficial</th>
+                        <th>Escuderia</th>
+                        <th>Marca / Detalhes</th>
+                        <th style="width: 120px; text-align: center;">Pontuação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="tag is-warning" style="font-weight: 900; color: #111;">🥇 1º Vencedor</span></td>
+                        <td><strong style="color: #fff; font-size: 1.05rem;">{{ corrida.vencedor_nome or 'Piloto Campeão' }}</strong></td>
+                        <td><span style="color: var(--f1-gold); font-weight: 700;">{{ corrida.vencedor_equipe or 'Escuderia Vencedora' }}</span></td>
+                        <td><span class="tag is-dark">Vitória na Etapa</span></td>
+                        <td style="text-align: center;"><span class="tag is-danger is-light has-text-weight-bold">+25 pts</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag is-light" style="font-weight: 800; color: #222; background: #e0e0e0;">🥈 2º Lugar</span></td>
+                        <td><strong style="color: #fff;">{{ corrida.segundo_nome or corrida.segundo_lugar }}</strong></td>
+                        <td><span style="color: #ccc;">{{ corrida.segundo_lugar if corrida.segundo_nome else 'Escuderia' }}</span></td>
+                        <td><span class="tag is-dark">2º Colocado</span></td>
+                        <td style="text-align: center;"><span class="tag is-danger is-light has-text-weight-bold">+18 pts</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag is-danger" style="font-weight: 800; background: #cd7f32; color: #fff;">🥉 3º Lugar</span></td>
+                        <td><strong style="color: #fff;">{{ corrida.terceiro_nome or corrida.terceiro_lugar }}</strong></td>
+                        <td><span style="color: #ccc;">{{ corrida.terceiro_lugar if corrida.terceiro_nome else 'Escuderia' }}</span></td>
+                        <td><span class="tag is-dark">3º Colocado</span></td>
+                        <td style="text-align: center;"><span class="tag is-danger is-light has-text-weight-bold">+15 pts</span></td>
+                    </tr>
+                    {% if corrida.pole_nome or corrida.pole_position_tempo %}
+                    <tr>
+                        <td><span class="tag is-info" style="font-weight: 800;">⚡ Pole Position</span></td>
+                        <td><strong style="color: #fff;">{{ corrida.pole_nome or 'Piloto Pole' }}</strong></td>
+                        <td><span style="color: #bbb;">Melhor Tempo de Sábado</span></td>
+                        <td><span class="has-text-info has-text-weight-bold">⏱️ {{ corrida.pole_position_tempo or 'Tempo Q3' }}</span></td>
+                        <td style="text-align: center;"><span class="tag is-dark">Largada P1</span></td>
+                    </tr>
+                    {% endif %}
+                    {% if corrida.volta_nome or corrida.volta_mais_rapida %}
+                    <tr>
+                        <td><span class="tag is-primary" style="font-weight: 800;">🟣 Volta Rápida</span></td>
+                        <td><strong style="color: #fff;">{{ corrida.volta_nome or 'Piloto Volta Rápida' }}</strong></td>
+                        <td><span style="color: #bbb;">Melhor Volta da Prova</span></td>
+                        <td><span class="has-text-success has-text-weight-bold">⏱️ {{ corrida.volta_mais_rapida or 'Tempo Recorde' }}</span></td>
+                        <td style="text-align: center;"><span class="tag is-success is-light has-text-weight-bold">+1 pt</span></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- CLASSIFICAÇÃO DETALHADA E RESUMO JORNALÍSTICO -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 40px;">
         
@@ -205,4 +287,68 @@
         </a>
     </div>
 </div>
+
+<script>
+function baixarPodioPDF() {
+    const tabela = document.getElementById('tabelaPodioEtapa');
+    if (!tabela) {
+        alert('Tabela de pódio não disponível para exportação.');
+        return;
+    }
+
+    // Cria documento customizado para impressão/PDF de altíssima qualidade
+    const docContainer = document.createElement('div');
+    docContainer.style.padding = '30px';
+    docContainer.style.backgroundColor = '#12121b';
+    docContainer.style.color = '#ffffff';
+    docContainer.style.fontFamily = 'Helvetica, Arial, sans-serif';
+
+    // Cabeçalho F1 com logo e dados da prova
+    docContainer.innerHTML = `
+        <div style="border-bottom: 3px solid #e10600; padding-bottom: 18px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="background: #e10600; color: #fff; font-weight: 900; font-size: 11px; padding: 3px 8px; border-radius: 3px; letter-spacing: 1px;">SETOR F1 OFICIAL</span>
+                <h1 style="color: #ffffff; font-size: 24px; font-weight: 900; margin: 8px 0 4px 0;">{{ corrida.nome_gp }}</h1>
+                <p style="color: #bbb; font-size: 13px; margin: 0;">🏁 Circuito: {{ corrida.circuito }} &bull; {{ corrida.cidade }}, {{ corrida.pais }}</p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 14px; font-weight: 800; color: #fff; display: block;">TEMPORADA {{ corrida.ano }}</span>
+                <span style="color: #aaa; font-size: 12px;">Etapa {{ corrida.rodada }} &bull; {{ corrida.data_corrida.strftime('%d/%m/%Y') if corrida.data_corrida else '' }}</span>
+            </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #f1c40f; font-size: 16px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.8px;">
+                🏆 Classificação Oficial do Pódio & Volta Mais Rápida
+            </h3>
+        </div>
+    `;
+
+    const cloneTabela = tabela.cloneNode(true);
+    cloneTabela.style.width = '100%';
+    cloneTabela.style.borderCollapse = 'collapse';
+    cloneTabela.style.color = '#ffffff';
+
+    docContainer.appendChild(cloneTabela);
+
+    // Rodapé de autenticidade
+    const footer = document.createElement('div');
+    footer.innerHTML = `
+        <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #888;">
+            <span>Documento gerado pelo Portal Setor F1 Fan Hub</span>
+            <span>Autenticação Oficial da Federação &bull; Fórmula 1</span>
+        </div>
+    `;
+    docContainer.appendChild(footer);
+
+    const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     'Podio_F1_{{ corrida.nome_gp|replace(" ", "_") }}_{{ corrida.ano }}.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#12121b' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(docContainer).save();
+}
+</script>
 {% endblock %}

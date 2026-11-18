@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Setor F1 • O Portal Definitivo do Automobilismo{% endblock %}</title>
-    <!-- Estilo CSS Customizado do Setor F1 -->
+    <!-- Bulma CSS Framework (ferramentas e marcação rápida) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- Estilo CSS Customizado do Setor F1 (preserva tema escuro, cores e transições) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Biblioteca html2pdf.js para exportação e download de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -35,15 +39,17 @@
                     <li><a href="{{ url_for('pilotos') }}" class="{% if request.endpoint == 'pilotos' or request.endpoint == 'piloto_detalhe' %}active{% endif %}">Pilotos</a></li>
                     <li><a href="{{ url_for('equipes') }}" class="{% if request.endpoint == 'equipes' %}active{% endif %}">Equipes</a></li>
                     <li><a href="{{ url_for('corridas') }}" class="{% if request.endpoint == 'corridas' or request.endpoint == 'corrida_detalhe' %}active{% endif %}">Corridas</a></li>
-                    <li><a href="{{ url_for('corridas_antigas') }}" class="btn-corridas-antigas {% if request.endpoint == 'corridas_antigas' %}active{% endif %}">Corridas Antigas 🏆</a></li>
                     <li><a href="{{ url_for('loja') }}" class="{% if request.endpoint == 'loja' %}active{% endif %}">Loja Oficial 🛍️</a></li>
 
-                    <!-- DROPDOWN 'MAIS' COM POSICIONAMENTO CORRIGIDO -->
+                    <!-- DROPDOWN 'MAIS' COM CORRIDAS ANTIGAS, GALERIA, MURAL E SOBRE -->
                     <li class="nav-dropdown-item">
-                        <button type="button" class="dropdown-trigger {% if request.endpoint in ['galeria', 'mensagens', 'sobre'] %}active{% endif %}" id="dropdownTrigger">
+                        <button type="button" class="dropdown-trigger {% if request.endpoint in ['galeria', 'mensagens', 'sobre', 'corridas_antigas'] %}active{% endif %}" id="dropdownTrigger">
                             Mais ▾
                         </button>
                         <div class="nav-dropdown-menu" id="dropdownMenu">
+                            <a href="{{ url_for('corridas_antigas') }}" class="dropdown-link {% if request.endpoint == 'corridas_antigas' %}active{% endif %}">
+                                🏆 Corridas Antigas (Pódios)
+                            </a>
                             <a href="{{ url_for('galeria') }}" class="dropdown-link {% if request.endpoint == 'galeria' %}active{% endif %}">
                                 📸 Galeria de Fotos
                             </a>

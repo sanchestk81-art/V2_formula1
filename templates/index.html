@@ -233,25 +233,21 @@
     }
 
     function iniciarCarrossel() {
-        intervaloCarrossel = setInterval(() => {
-            mostrarSlide(slideAtual + 1);
-        }, 5000); // Passa a cada 5 segundos
+        if (intervaloCarrossel) clearInterval(intervaloCarrossel);
+        if (slides && slides.length > 1) {
+            intervaloCarrossel = setInterval(() => {
+                mostrarSlide(slideAtual + 1);
+            }, 4500); // Rotação suave contínua a cada 4.5s
+        }
     }
 
     function reiniciarIntervalo() {
-        clearInterval(intervaloCarrossel);
+        if (intervaloCarrossel) clearInterval(intervaloCarrossel);
         iniciarCarrossel();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         iniciarCarrossel();
-
-        // Pausa no hover do carrossel
-        const carousel = document.getElementById('heroCarousel');
-        if (carousel) {
-            carousel.addEventListener('mouseenter', () => clearInterval(intervaloCarrossel));
-            carousel.addEventListener('mouseleave', () => iniciarCarrossel());
-        }
 
         // Filtro em tempo real para a DataTable de pilotos
         const filtroInput = document.getElementById('filtroPilotosTable');

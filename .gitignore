@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Local Environment Variables (segredos locais do .env)
+.env
+.env.local
+
+# IDEs
+.idea/
+.vscode/
+
+# NUNCA ignorar arquivos essenciais do Vercel e da aplicação
+!vercel.json
+!requirements.txt
+!app.py
+!db.py

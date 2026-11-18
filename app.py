@@ -18,7 +18,7 @@ Aplicação Flask do Portal 'Setor F1'.
 
 import os
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -30,11 +30,70 @@ load_dotenv()
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "setorf1_super_secret_dev_key")
 
-UPLOAD_PRODUTOS = os.path.join(app.root_path, "static", "images", "produtos")
-UPLOAD_PILOTOS = os.path.join(app.root_path, "static", "images", "pilotos")
-UPLOAD_GALERIA = os.path.join(app.root_path, "static", "images", "galeria")
+# Mapeamento auxiliar para deduzir código de país automaticamente da nacionalidade
+MAPA_NACIONALIDADES = {
+    "brasil": "br", "brasileira": "br", "brasileiro": "br",
+    "holanda": "nl", "holandesa": "nl", "holandês": "nl", "países baixos": "nl",
+    "reino unido": "gb", "britânica": "gb", "britânico": "gb", "inglaterra": "gb", "inglesa": "gb",
+    "mônaco": "mc", "monaco": "mc", "monegasca": "mc", "monegasco": "mc",
+    "espanha": "es", "espanhola": "es", "espanhol": "es",
+    "austrália": "au", "australia": "au", "australiana": "au", "australiano": "au",
+    "itália": "it", "italia": "it", "italiana": "it", "italiano": "it",
+    "frança": "fr", "franca": "fr", "francesa": "fr", "francês": "fr",
+    "alemanha": "de", "alemã": "de", "alemao": "de", "alemão": "de",
+    "méxico": "mx", "mexico": "mx", "mexicana": "mx", "mexicano": "mx",
+    "canadá": "ca", "canada": "ca", "canadense": "ca",
+    "finlândia": "fi", "finlandia": "fi", "finlandesa": "fi", "finlandês": "fi",
+    "tailândia": "th", "tailandia": "th", "tailandesa": "th", "tailandês": "th",
+    "nova zelândia": "nz", "nova zelandia": "nz", "neozelandesa": "nz", "neozelandês": "nz",
+    "estados unidos": "us", "americana": "us", "americano": "us", "eua": "us",
+    "japão": "jp", "japao": "jp", "japonesa": "jp", "japonês": "jp",
+    "china": "cn", "chinesa": "cn", "chinês": "cn",
+    "áustria": "at", "austria": "at", "austríaca": "at", "austríaco": "at"
+}
+
+def inferir_pais_codigo(nacionalidade):
+    if not nacionalidade:
+        return "un"
+    nac_limpa = nacionalidade.strip().lower()
+    return MAPA_NACIONALIDADES.get(nac_limpa, "un")
+
+# Diretórios para upload de imagens (com compatibilidade para Vercel e Serverless)
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+if IS_VERCEL:
+    # No Vercel, o sistema de arquivos da aplicação é somente leitura; apenas /tmp é gravável
+    UPLOAD_PRODUTOS = os.path.join("/tmp", "produtos")
+    UPLOAD_PILOTOS = os.path.join("/tmp", "pilotos")
+    UPLOAD_GALERIA = os.path.join("/tmp", "galeria")
+else:
+    UPLOAD_PRODUTOS = os.path.join(app.root_path, "static", "images", "produtos")
+    UPLOAD_PILOTOS = os.path.join(app.root_path, "static", "images", "pilotos")
+    UPLOAD_GALERIA = os.path.join(app.root_path, "static", "images", "galeria")
+
 for p in [UPLOAD_PRODUTOS, UPLOAD_PILOTOS, UPLOAD_GALERIA]:
-    os.makedirs(p, exist_ok=True)
+    try:
+        os.makedirs(p, exist_ok=True)
+    except OSError:
+        pass
+
+
+@app.route("/static/images/<subpasta>/<path:filename>")
+def servir_imagem_estatica(subpasta, filename):
+    """
+    Serve imagens estáticas tanto da pasta 'static/images/' quanto de '/tmp' (quando rodando no Vercel).
+    """
+    pasta_local = os.path.join(app.root_path, "static", "images", subpasta)
+    caminho_local = os.path.join(pasta_local, filename)
+    if os.path.exists(caminho_local):
+        return send_from_directory(pasta_local, filename)
+
+    if IS_VERCEL:
+        pasta_tmp = os.path.join("/tmp", subpasta)
+        caminho_tmp = os.path.join(pasta_tmp, filename)
+        if os.path.exists(caminho_tmp):
+            return send_from_directory(pasta_tmp, filename)
+
+    return ("Imagem não encontrada", 404)
 
 # Mapeamento auxiliar de bandeiras em emoji
 EMOJIS_BANDEIRAS = {
@@ -463,6 +522,28 @@ def loja():
     """)
     banners_loja = cur.fetchall()
 
+    if not banners_loja:
+        banners_loja = [
+            {
+                "id": 0,
+                "titulo": "Coleção Oficial F1 2026",
+                "subtitulo": "Bonés exclusivos, camisetas de escuderias e miniaturas de alta precisão.",
+                "imagem_url": "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1600&q=80",
+                "link_url": "#produtos",
+                "tag_destaque": "🔥 FAN STORE OFICIAL",
+                "produto_id": None
+            },
+            {
+                "id": -1,
+                "titulo": "Bonés & Miniaturas Exclusivas",
+                "subtitulo": "Edições comemorativas das 10 equipes do grid e réplicas originais em escala 1:43.",
+                "imagem_url": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=1600&q=80",
+                "link_url": "#produtos",
+                "tag_destaque": "⭐ EDIÇÃO LIMITADA",
+                "produto_id": None
+            }
+        ]
+
     # Categorias
     cur.execute("SELECT DISTINCT categoria FROM produtos ORDER BY categoria ASC;")
     categorias = [c["categoria"] for c in cur.fetchall()]
@@ -746,6 +827,12 @@ def admin_dashboard():
     cur.execute("SELECT * FROM galeria ORDER BY id DESC;")
     todas_fotos = cur.fetchall()
 
+    # Anos disponíveis de corridas para organização em acordeão / abas
+    cur.execute("SELECT DISTINCT ano FROM corridas ORDER BY ano DESC;")
+    anos_corridas = [r["ano"] for r in cur.fetchall()]
+    if not anos_corridas:
+        anos_corridas = [2026, 2025, 2024, 2023, 2022, 2021, 2020]
+
     cur.close()
     conn.close()
 
@@ -759,6 +846,7 @@ def admin_dashboard():
         total_galeria=total_galeria,
         noticias=todas_noticias,
         corridas=todas_corridas,
+        anos_corridas=anos_corridas,
         pilotos=todos_pilotos,
         equipes=todas_equipes,
         produtos=todos_produtos,
@@ -777,16 +865,27 @@ def admin_criar_piloto():
     numero = request.form.get("numero")
     numero = int(numero) if numero else None
     nacionalidade = request.form.get("nacionalidade", "").strip()
-    pais_codigo = request.form.get("pais_codigo", "br").strip().lower()
-    equipe_id = request.form.get("equipe_id")
-    equipe_id = int(equipe_id) if equipe_id else None
+    
+    # Código do país deduzido automaticamente da nacionalidade (não precisa digitar)
+    pais_codigo = inferir_pais_codigo(nacionalidade)
+
+    # Equipe é obrigatória
+    equipe_id_str = request.form.get("equipe_id", "").strip()
+    if not equipe_id_str:
+        flash("A seleção de uma equipe é obrigatória para cadastrar o piloto.", "error")
+        return redirect(url_for("admin_dashboard"))
+    equipe_id = int(equipe_id_str)
+
     papel_equipe = request.form.get("papel_equipe", "titular")
     ativo = True if request.form.get("ativo") else False
-    pontos_temporada = int(request.form.get("pontos_temporada", 0))
-    chance_titulo = float(request.form.get("chance_titulo", 0.0))
-    titulos_mundiais = int(request.form.get("titulos_mundiais", 0))
-    vitorias = int(request.form.get("vitorias", 0))
-    podios = int(request.form.get("podios", 0))
+
+    # Campos removidos do form: inicializados com valores padrão limpos
+    pontos_temporada = int(request.form.get("pontos_temporada") or 0)
+    chance_titulo = float(request.form.get("chance_titulo") or 0.0)
+    titulos_mundiais = int(request.form.get("titulos_mundiais") or 0)
+    vitorias = int(request.form.get("vitorias") or 0)
+    podios = int(request.form.get("podios") or 0)
+
     como_entrou_f1 = request.form.get("como_entrou_f1", "").strip()
     trajetoria_f1 = request.form.get("trajetoria_f1", "").strip()
 
@@ -794,10 +893,13 @@ def admin_criar_piloto():
     foto_arquivo = request.files.get("foto_arquivo")
 
     if foto_arquivo and foto_arquivo.filename:
-        nome_seguro = secure_filename(foto_arquivo.filename)
-        caminho_salvar = os.path.join(UPLOAD_PILOTOS, nome_seguro)
-        foto_arquivo.save(caminho_salvar)
-        imagem_url = f"/static/images/pilotos/{nome_seguro}"
+        try:
+            nome_seguro = secure_filename(foto_arquivo.filename)
+            caminho_salvar = os.path.join(UPLOAD_PILOTOS, nome_seguro)
+            foto_arquivo.save(caminho_salvar)
+            imagem_url = f"/static/images/pilotos/{nome_seguro}"
+        except OSError:
+            pass
     elif not imagem_url:
         imagem_url = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"
 
@@ -832,16 +934,23 @@ def admin_editar_piloto(id):
         numero = request.form.get("numero")
         numero = int(numero) if numero else None
         nacionalidade = request.form.get("nacionalidade", "").strip()
-        pais_codigo = request.form.get("pais_codigo", "br").strip().lower()
-        equipe_id = request.form.get("equipe_id")
-        equipe_id = int(equipe_id) if equipe_id else None
+        pais_codigo = inferir_pais_codigo(nacionalidade)
+
+        equipe_id_str = request.form.get("equipe_id", "").strip()
+        if not equipe_id_str:
+            flash("A seleção de uma equipe é obrigatória.", "error")
+            return redirect(url_for("admin_editar_piloto", id=id))
+        equipe_id = int(equipe_id_str)
+
         papel_equipe = request.form.get("papel_equipe", "titular")
         ativo = True if request.form.get("ativo") else False
-        pontos_temporada = int(request.form.get("pontos_temporada", 0))
-        chance_titulo = float(request.form.get("chance_titulo", 0.0))
-        titulos_mundiais = int(request.form.get("titulos_mundiais", 0))
-        vitorias = int(request.form.get("vitorias", 0))
-        podios = int(request.form.get("podios", 0))
+
+        pontos_temporada = int(request.form.get("pontos_temporada") or 0)
+        chance_titulo = float(request.form.get("chance_titulo") or 0.0)
+        titulos_mundiais = int(request.form.get("titulos_mundiais") or 0)
+        vitorias = int(request.form.get("vitorias") or 0)
+        podios = int(request.form.get("podios") or 0)
+
         como_entrou_f1 = request.form.get("como_entrou_f1", "").strip()
         trajetoria_f1 = request.form.get("trajetoria_f1", "").strip()
 
@@ -849,10 +958,13 @@ def admin_editar_piloto(id):
         foto_arquivo = request.files.get("foto_arquivo")
 
         if foto_arquivo and foto_arquivo.filename:
-            nome_seguro = secure_filename(foto_arquivo.filename)
-            caminho_salvar = os.path.join(UPLOAD_PILOTOS, nome_seguro)
-            foto_arquivo.save(caminho_salvar)
-            imagem_url = f"/static/images/pilotos/{nome_seguro}"
+            try:
+                nome_seguro = secure_filename(foto_arquivo.filename)
+                caminho_salvar = os.path.join(UPLOAD_PILOTOS, nome_seguro)
+                foto_arquivo.save(caminho_salvar)
+                imagem_url = f"/static/images/pilotos/{nome_seguro}"
+            except OSError:
+                pass
 
         cur.execute("""
             UPDATE pilotos 
@@ -899,6 +1011,9 @@ def admin_excluir_piloto(id):
 
     cur.close()
     conn.close()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Piloto excluído com sucesso!"})
 
     flash("Piloto removido com sucesso.", "info")
     return redirect(url_for("admin_dashboard"))
@@ -1143,6 +1258,9 @@ def admin_excluir_corrida(id):
     cur.close()
     conn.close()
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Corrida excluída com sucesso!"})
+
     flash("Corrida excluída com sucesso.", "info")
     return redirect(url_for("admin_dashboard"))
 
@@ -1240,6 +1358,9 @@ def admin_excluir_noticia(id):
     cur.close()
     conn.close()
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Notícia excluída com sucesso!"})
+
     flash("Notícia removida.", "info")
     return redirect(url_for("admin_dashboard"))
 
@@ -1265,10 +1386,13 @@ def admin_criar_produto():
     arquivo_foto = request.files.get("foto_arquivo")
 
     if arquivo_foto and arquivo_foto.filename:
-        nome_seguro = secure_filename(arquivo_foto.filename)
-        caminho_salvar = os.path.join(UPLOAD_PRODUTOS, nome_seguro)
-        arquivo_foto.save(caminho_salvar)
-        imagem_url = f"/static/images/produtos/{nome_seguro}"
+        try:
+            nome_seguro = secure_filename(arquivo_foto.filename)
+            caminho_salvar = os.path.join(UPLOAD_PRODUTOS, nome_seguro)
+            arquivo_foto.save(caminho_salvar)
+            imagem_url = f"/static/images/produtos/{nome_seguro}"
+        except OSError:
+            pass
     elif not imagem_url:
         imagem_url = "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80"
 
@@ -1326,10 +1450,13 @@ def admin_editar_produto(id):
         arquivo_foto = request.files.get("foto_arquivo")
 
         if arquivo_foto and arquivo_foto.filename:
-            nome_seguro = secure_filename(arquivo_foto.filename)
-            caminho_salvar = os.path.join(UPLOAD_PRODUTOS, nome_seguro)
-            arquivo_foto.save(caminho_salvar)
-            imagem_url = f"/static/images/produtos/{nome_seguro}"
+            try:
+                nome_seguro = secure_filename(arquivo_foto.filename)
+                caminho_salvar = os.path.join(UPLOAD_PRODUTOS, nome_seguro)
+                arquivo_foto.save(caminho_salvar)
+                imagem_url = f"/static/images/produtos/{nome_seguro}"
+            except OSError:
+                pass
 
         cur.execute("""
             UPDATE produtos 
@@ -1373,6 +1500,9 @@ def admin_excluir_produto(id):
 
     cur.close()
     conn.close()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Produto excluído da loja com sucesso!"})
 
     flash("Produto excluído da loja com sucesso.", "info")
     return redirect(url_for("admin_dashboard"))
@@ -1420,6 +1550,9 @@ def admin_excluir_banner(id):
     cur.close()
     conn.close()
 
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Slide removido com sucesso!"})
+
     flash("Banner removido.", "info")
     return redirect(url_for("admin_dashboard"))
 
@@ -1438,10 +1571,13 @@ def admin_criar_foto_galeria():
     arquivo_foto = request.files.get("foto_arquivo")
 
     if arquivo_foto and arquivo_foto.filename:
-        nome_seguro = secure_filename(arquivo_foto.filename)
-        caminho_salvar = os.path.join(UPLOAD_GALERIA, nome_seguro)
-        arquivo_foto.save(caminho_salvar)
-        imagem_url = f"/static/images/galeria/{nome_seguro}"
+        try:
+            nome_seguro = secure_filename(arquivo_foto.filename)
+            caminho_salvar = os.path.join(UPLOAD_GALERIA, nome_seguro)
+            arquivo_foto.save(caminho_salvar)
+            imagem_url = f"/static/images/galeria/{nome_seguro}"
+        except OSError:
+            pass
     elif not imagem_url:
         imagem_url = "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80"
 
@@ -1472,6 +1608,9 @@ def admin_excluir_foto_galeria(id):
 
     cur.close()
     conn.close()
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+        return jsonify({"success": True, "message": "Foto excluída da galeria com sucesso!"})
 
     flash("Foto removida da galeria.", "info")
     return redirect(url_for("admin_dashboard"))
